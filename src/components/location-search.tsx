@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, X, Loader2 } from 'lucide-react';
+import { Search, X, Loader2, MapPin } from 'lucide-react';
 import type { Location, NominatimGeocodingResult } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,6 +33,7 @@ export function LocationSearch({ onLocationSelect, initialSearchTerm = "" }: Loc
   const [showResults, setShowResults] = useState(false);
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchLocations = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -92,11 +93,21 @@ export function LocationSearch({ onLocationSelect, initialSearchTerm = "" }: Loc
       setShowResults(false);
       setIsLoading(false); // Reset loading state as well
     }
-    // This effect does not automatically trigger a search for initialSearchTerm.
-    // HomePage handles setting the initial selected location.
-    // User-initiated searches are handled by handleInputChange.
   }, [initialSearchTerm]);
 
+  // Handle clicks outside the search component
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newSearchTerm = event.target.value;
@@ -129,15 +140,12 @@ export function LocationSearch({ onLocationSelect, initialSearchTerm = "" }: Loc
   return (
     <div 
       className="relative w-full"
-      onBlur={(e) => {
-        // Hide results if focus moves outside the search component
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setShowResults(false);
-        }
-      }}
+      ref={searchContainerRef}
     >
-      <div className="flex items-center gap-2 border border-input rounded-md">
-        <Search className="h-5 w-5 ml-3 text-muted-foreground shrink-0" />
+      <div className="flex items-center gap-2 border border-input rounded-lg overflow-hidden bg-background/80 backdrop-blur-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm hover:shadow">
+        <div className="flex items-center justify-center ml-3 bg-primary/10 rounded-full p-1.5">
+          <Search className="h-4 w-4 text-primary shrink-0" />
+        </div>
         <Input
           ref={inputRef}
           type="text"
@@ -145,31 +153,53 @@ export function LocationSearch({ onLocationSelect, initialSearchTerm = "" }: Loc
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => searchTerm && results.length > 0 && setShowResults(true)}
-          className="flex-grow text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-2 py-2 h-10"
+          className="flex-grow text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-2 py-2 h-11 bg-transparent"
           aria-label="Search location"
         />
         {isLoading && (
-            <Loader2 className="h-5 w-5 mr-3 text-muted-foreground animate-spin shrink-0" />
+          <div className="mr-3 p-1 bg-primary/5 rounded-full">
+            <Loader2 className="h-5 w-5 text-primary animate-spin shrink-0" />
+          </div>
         )}
         {!isLoading && searchTerm && (
-            <Button variant="ghost" size="icon" onClick={clearSearch} className="mr-1 shrink-0 h-8 w-8">
-                <X className="h-5 w-5" />
-                 <span className="sr-only">Clear search</span>
-            </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={clearSearch} 
+            className="mr-2 shrink-0 h-7 w-7 rounded-full hover:bg-muted/80"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Clear search</span>
+          </Button>
         )}
       </div>
       {showResults && results.length > 0 && (
-        <Card className="absolute z-10 mt-1 w-full shadow-lg bg-card border border-border">
+        <Card className="absolute z-50 mt-1 w-full shadow-lg bg-card/95 backdrop-blur-sm border border-border/50 rounded-lg overflow-hidden">
           <CardContent className="p-0">
-            <ul className="max-h-60 overflow-y-auto py-1">
+            <ul className="max-h-72 overflow-y-auto divide-y divide-border/30">
               {results.map((location) => (
                 <li key={location.id || `${location.latitude}-${location.longitude}`}>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-left h-auto py-2 px-3 rounded-none hover:bg-accent hover:text-accent-foreground"
+                    className="w-full justify-start text-left h-auto py-3 px-4 rounded-none hover:bg-accent hover:text-accent-foreground transition-colors group"
                     onClick={() => handleResultClick(location)}
                   >
-                    {location.fullName || location.name}
+                    <div className="flex items-start mr-2">
+                      <div className="mt-0.5 bg-primary/10 p-1 rounded-full group-hover:bg-primary/20 transition-colors">
+                        <MapPin className="h-4 w-4 text-primary shrink-0" />
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="font-medium truncate">{location.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {location.fullName ? location.fullName.split(', ').slice(1).join(', ') : location.country || ''}
+                      </p>
+                      {location.latitude && location.longitude && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                        </p>
+                      )}
+                    </div>
                   </Button>
                 </li>
               ))}

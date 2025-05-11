@@ -1,18 +1,17 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Location, OpenWeatherMapResponse } from '@/lib/types'; // Updated import to use Location from types
+import type { Location, OpenWeatherMapResponse } from '@/lib/types';
 import { WeatherIcon } from "./weather-icon";
 import { PhotoGallery } from './photo-gallery';
-import { Thermometer, Droplets, Wind, Globe, Info } from 'lucide-react';
+import { Thermometer, Droplets, Wind, Globe, Info, MapPin, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LocationDetailsProps {
-  location: Location | null; // Updated to use Location type
+  location: Location | null;
 }
 
 export function LocationDetails({ location }: LocationDetailsProps) {
@@ -28,7 +27,6 @@ export function LocationDetails({ location }: LocationDetailsProps) {
       const fetchWeather = async () => {
         if (!openWeatherMapApiKey) {
           setWeatherError("OpenWeatherMap API key not configured.");
-          // console.error removed as the error is handled by setWeatherError and toast
           return;
         }
         setIsLoadingWeather(true);
@@ -68,15 +66,15 @@ export function LocationDetails({ location }: LocationDetailsProps) {
 
   if (!location) {
     return (
-      <Card className="h-full shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl">Location Details</CardTitle>
+      <Card className="h-full shadow-lg border-none bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl font-bold">Location Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <Alert variant="default" className="bg-secondary">
-            <Info className="h-5 w-5" />
-            <AlertTitle>No Location Selected</AlertTitle>
-            <AlertDescription>
+          <Alert variant="default" className="bg-secondary/70 border border-secondary">
+            <Info className="h-5 w-5 text-blue-500" />
+            <AlertTitle className="font-semibold">No Location Selected</AlertTitle>
+            <AlertDescription className="text-muted-foreground">
               Search for a location or click on the map to see details here.
             </AlertDescription>
           </Alert>
@@ -86,67 +84,120 @@ export function LocationDetails({ location }: LocationDetailsProps) {
   }
 
   const country = location.country || 'N/A';
+  const today = new Date().toLocaleDateString('en-US', { 
+    weekday: 'long',
+    month: 'short', 
+    day: 'numeric'
+  });
 
   return (
-    <Card className="h-full shadow-lg overflow-y-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl">{location.name || 'Unknown Location'}</CardTitle>
-        <CardDescription className="flex items-center">
-            <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
-            {location.fullName ? location.fullName.split(', ').slice(1).join(', ') : country}
-        </CardDescription>
+    <Card className="h-full shadow-lg overflow-y-auto border-none bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <CardHeader className="pb-2 border-b">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-2xl font-bold text-primary">{location.name || 'Unknown Location'}</CardTitle>
+            <CardDescription className="flex items-center mt-1">
+              <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
+              {location.fullName ? location.fullName.split(', ').slice(1).join(', ') : country}
+            </CardDescription>
+          </div>
+          <div className="text-right">
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4 mr-1" />
+              <span>{today}</span>
+            </div>
+            {location.latitude && location.longitude && (
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <MapPin className="h-3 w-3 mr-1" />
+                <span>
+                  {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
-        <h3 className="text-lg font-semibold mb-3 text-primary">Current Weather</h3>
+      <CardContent className="pt-4">
+        <h3 className="text-lg font-semibold mb-3 text-primary flex items-center">
+          <span className="bg-primary/10 p-1 rounded mr-2">
+            <Thermometer className="h-5 w-5 text-primary" />
+          </span>
+          Current Weather
+        </h3>
         {isLoadingWeather && (
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-6 w-1/2" />
-            <Skeleton className="h-6 w-2/3" />
-            <Skeleton className="h-6 w-1/2" />
+          <div className="space-y-4 p-4 bg-card/50 rounded-lg border border-border/30">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-10 w-1/2 rounded-md" />
+              <Skeleton className="h-12 w-16 rounded-full" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Skeleton className="h-12 w-full rounded-md" />
+              <Skeleton className="h-12 w-full rounded-md" />
+              <Skeleton className="h-12 w-full rounded-md" />
+            </div>
           </div>
         )}
         {weatherError && !isLoadingWeather && (
-           <Alert variant="destructive">
+           <Alert variant="destructive" className="bg-destructive/10 text-destructive border border-destructive/30">
              <Info className="h-5 w-5" />
-             <AlertTitle>Weather Data Unavailable</AlertTitle>
+             <AlertTitle className="font-semibold">Weather Data Unavailable</AlertTitle>
              <AlertDescription>{weatherError}</AlertDescription>
            </Alert>
         )}
         {weather && !isLoadingWeather && !weatherError && (
-          <div className="space-y-3">
+          <div className="space-y-4 p-4 bg-card/50 rounded-lg border border-border/30">
             <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <WeatherIcon iconCode={weather.weather[0].icon} altText={weather.weather[0].description} size={50}/>
-                    <p className="text-lg capitalize ml-2">{weather.weather[0].description}</p>
+              <div className="flex items-center">
+                <div className="bg-primary/10 p-2 rounded-full mr-3">
+                  <WeatherIcon iconCode={weather.weather[0].icon} altText={weather.weather[0].description} size={42}/>
                 </div>
-                <p className="text-3xl font-bold">{Math.round(weather.main.temp)}°C</p>
+                <div>
+                  <p className="text-lg capitalize font-medium">{weather.weather[0].description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-4xl font-bold text-primary">{Math.round(weather.main.temp)}°C</p>
+                <p className="text-sm text-muted-foreground">
+                  Feels like {Math.round(weather.main.feels_like)}°C
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center p-2 bg-muted/50 rounded-md">
-                <Thermometer className="h-5 w-5 mr-2 text-accent" />
-                <span>Feels like: {Math.round(weather.main.feels_like)}°C</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+              <div className="flex flex-col items-center p-3 bg-card rounded-lg border border-border/30 hover:shadow-md transition-shadow">
+                <Thermometer className="h-6 w-6 mb-2 text-orange-500" />
+                <p className="text-sm font-medium">Temperature</p>
+                <p className="font-semibold mt-1">{Math.round(weather.main.temp)}°C</p>
+                <p className="text-xs text-muted-foreground">Feels: {Math.round(weather.main.feels_like)}°C</p>
               </div>
-              <div className="flex items-center p-2 bg-muted/50 rounded-md">
-                <Droplets className="h-5 w-5 mr-2 text-accent" />
-                <span>Humidity: {weather.main.humidity}%</span>
+              
+              <div className="flex flex-col items-center p-3 bg-card rounded-lg border border-border/30 hover:shadow-md transition-shadow">
+                <Droplets className="h-6 w-6 mb-2 text-blue-500" />
+                <p className="text-sm font-medium">Humidity</p>
+                <p className="font-semibold mt-1">{weather.main.humidity}%</p>
+                <p className="text-xs text-muted-foreground">Atmospheric moisture</p>
               </div>
-              <div className="flex items-center p-2 bg-muted/50 rounded-md">
-                <Wind className="h-5 w-5 mr-2 text-accent" />
-                <span>Wind: {weather.wind.speed.toFixed(1)} m/s</span>
+              
+              <div className="flex flex-col items-center p-3 bg-card rounded-lg border border-border/30 hover:shadow-md transition-shadow">
+                <Wind className="h-6 w-6 mb-2 text-teal-500" />
+                <p className="text-sm font-medium">Wind</p>
+                <p className="font-semibold mt-1">{weather.wind.speed.toFixed(1)} m/s</p>
+                <p className="text-xs text-muted-foreground">Wind speed</p>
               </div>
             </div>
           </div>
         )}
         {!isLoadingWeather && !weather && !weatherError && (!location.latitude || !location.longitude) && (
-            <Alert variant="default">
-                <Info className="h-5 w-5" />
-                <AlertTitle>Location Incomplete</AlertTitle>
-                <AlertDescription>
-                    The selected location does not have coordinates to fetch weather for.
-                </AlertDescription>
-            </Alert>
+          <Alert variant="default" className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200">
+            <Info className="h-5 w-5" />
+            <AlertTitle className="font-semibold">Location Incomplete</AlertTitle>
+            <AlertDescription>
+              The selected location does not have coordinates to fetch weather for.
+            </AlertDescription>
+          </Alert>
         )}
         
         <PhotoGallery locationName={location.name} />
