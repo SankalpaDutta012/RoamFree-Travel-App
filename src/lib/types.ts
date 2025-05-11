@@ -1,35 +1,21 @@
-// Mapbox Geocoding API Types
-export interface MapboxFeature {
-  id: string;
-  type: string;
-  place_type: string[];
-  relevance: number;
-  properties: {
-    accuracy?: string;
-    mapbox_id?: string;
+// General Location Type
+export interface Location {
+  id?: string; // Optional, as not all sources might provide it or it might be a number
+  name: string;
+  fullName?: string; // For display_name or place_name
+  latitude: number;
+  longitude: number;
+  country?: string; // Optional country information
+  // Optional fields from Nominatim/Mapbox that might be useful
+  osm_id?: number;
+  osm_type?: string;
+  class?: string;
+  type?: string;
+  importance?: number;
+  address?: { // Nominatim address object
+    country?: string;
+    // ... other address components if needed
   };
-  text: string;
-  place_name: string;
-  bbox?: [number, number, number, number];
-  center: [number, number]; // [longitude, latitude]
-  geometry: {
-    type: string;
-    coordinates: [number, number]; // [longitude, latitude]
-  };
-  context: Array<{
-    id: string;
-    mapbox_id?: string;
-    text: string;
-    wikidata?: string;
-    short_code?: string;
-  }>;
-}
-
-export interface MapboxGeocodingResponse {
-  type: string;
-  query: string[];
-  features: MapboxFeature[];
-  attribution: string;
 }
 
 // OpenWeatherMap API Types
@@ -86,4 +72,24 @@ export interface OpenWeatherMapResponse {
   id: number;
   name: string;
   cod: number;
+}
+
+// Type for results from Nominatim API, can be mapped to the general Location type
+export interface NominatimGeocodingResult {
+  place_id: number;
+  licence: string;
+  osm_type: string;
+  osm_id: number;
+  boundingbox: [string, string, string, string]; // Corrected from Nominatim actual response
+  lat: string;
+  lon: string;
+  display_name: string;
+  class: string;
+  type: string;
+  importance: number;
+  icon?: string;
+  address?: { // Nominatim address object
+    country?: string;
+    // ... other address components if needed
+  };
 }

@@ -1,85 +1,67 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { LocationSearch } from '@/components/location-search';
-import { InteractiveMap } from '@/components/interactive-map';
 import { LocationDetails } from '@/components/location-details';
-import type { MapboxFeature } from '@/lib/types';
+import type { Location } from '@/lib/types';
 import { RoamFreeLogo } from '@/components/icons/roamfree-logo';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Dynamically import InteractiveMap with ssr: false
+const InteractiveMap = dynamic(() => 
+  import('@/components/interactive-map').then(mod => mod.InteractiveMap),
+  { 
+    ssr: false,
+    loading: () => <Skeleton className="w-full h-[400px] md:h-[500px] lg:h-full rounded-lg" data-ai-hint="map placeholder" />
+  }
+);
+
 
 // Default coordinates (London, UK)
 const DEFAULT_LONGITUDE = -0.1278;
 const DEFAULT_LATITUDE = 51.5074;
 const DEFAULT_LOCATION_NAME = "London";
+const DEFAULT_COUNTRY = "United Kingdom";
 
 export default function HomePage() {
-  const [selectedLocation, setSelectedLocation] = useState<MapboxFeature | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [mapCenter, setMapCenter] = useState<{ longitude: number; latitude: number; zoom: number; key: number }>({
     longitude: DEFAULT_LONGITUDE,
     latitude: DEFAULT_LATITUDE,
     zoom: 9,
-    key: Date.now(), // Key to force map re-render on programmatic change
+    key: Date.now(), 
   });
   const [initialSearchDone, setInitialSearchDone] = useState(false);
 
 
-  const handleLocationSelect = (feature: MapboxFeature) => {
-    setSelectedLocation(feature);
+  const handleLocationSelect = (location: Location) => {
+    setSelectedLocation(location);
     setMapCenter({
-      longitude: feature.center[0],
-      latitude: feature.center[1],
-      zoom: 13, // Zoom in more when a specific location is selected
+      longitude: location.longitude,
+      latitude: location.latitude,
+      zoom: 13,
       key: Date.now(),
     });
   };
   
-  // Effect to set an initial location on load
   useEffect(() => {
     if (!initialSearchDone) {
-      // Create a mock MapboxFeature for the default location
-      // This would ideally be fetched, but for simplicity, we mock it
-      // or rely on LocationSearch to fetch it if an initial term is passed.
-      const defaultFeature: MapboxFeature = {
-        id: 'default-location',
-        type: 'Feature',
-        place_type: ['place'],
-        relevance: 1,
-        properties: {},
-        text: DEFAULT_LOCATION_NAME,
-        place_name: `${DEFAULT_LOCATION_NAME}, United Kingdom`, // Example place_name
-        center: [DEFAULT_LONGITUDE, DEFAULT_LATITUDE],
-        geometry: {
-          type: 'Point',
-          coordinates: [DEFAULT_LONGITUDE, DEFAULT_LATITUDE],
-        },
-        context: [
-          { id: `country.${DEFAULT_LOCATION_NAME.toLowerCase()}`, text: 'United Kingdom' }
-        ],
-      };
-      setSelectedLocation(defaultFeature);
-      setMapCenter({
-        longitude: DEFAULT_LONGITUDE,
+      const defaultLocation: Location = {
         latitude: DEFAULT_LATITUDE,
-        zoom: 9,
-        key: Date.now(),
-      });
+        longitude: DEFAULT_LONGITUDE,
+        name: DEFAULT_LOCATION_NAME,
+        fullName: `${DEFAULT_LOCATION_NAME}, ${DEFAULT_COUNTRY}`,
+        country: DEFAULT_COUNTRY,
+      };
+      setSelectedLocation(defaultLocation);
       setInitialSearchDone(true);
     }
   }, [initialSearchDone]);
 
-  const handleMapClick = (event: mapboxgl.MapLayerMouseEvent) => {
-    // For simplicity, this example doesn't perform reverse geocoding on map click.
-    // A full implementation would use event.lngLat to fetch location details.
-    console.log("Map clicked at:", event.lngLat);
-    // Potentially set a marker and fetch data for this point
-    // For now, let's just update the map center if we want to explore this feature
-    // setSelectedLocation(null); // Clear detailed location if just clicking map
-    // setMapCenter({
-    //   longitude: event.lngLat.lng,
-    //   latitude: event.lngLat.lat,
-    //   zoom: mapCenter.zoom, // keep current zoom or adjust
-    //   key: Date.now(),
-    // });
+  const handleMapClick = (event: L.LeafletMouseEvent) => {
+    console.log("Map clicked at:", event.latlng); // Corrected to latlng for Leaflet
+    // Potentially update selected location based on reverse geocoding result for event.latlng
   };
 
   return (
@@ -92,24 +74,22 @@ export default function HomePage() {
               RoamFree
             </h1>
           </div>
-          {/* Future: Add Dark Mode Toggle or other header items here */}
         </div>
       </header>
 
       <main className="flex-1 container py-6">
-        <div className="grid md:grid-cols-3 gap-6 h-full min-h-[calc(100vh-10rem)]"> {/* Adjust min-height as needed */}
+        <div className="grid md:grid-cols-3 gap-6 h-full min-h-[calc(100vh-10rem)]">
           <div className="md:col-span-2 flex flex-col gap-6">
             <LocationSearch 
               onLocationSelect={handleLocationSelect} 
-              initialSearchTerm={DEFAULT_LOCATION_NAME}
+              initialSearchTerm={selectedLocation?.fullName || DEFAULT_LOCATION_NAME} // Use fullName for initial search
             />
-            <div className="flex-grow rounded-lg overflow-hidden">
+            <div className="flex-grow rounded-lg overflow-hidden shadow-md">
                <InteractiveMap
-                key={mapCenter.key} // Force re-render when key changes
-                longitude={mapCenter.longitude}
-                latitude={mapCenter.latitude}
+                key={mapCenter.key} 
+                location={selectedLocation}
                 zoom={mapCenter.zoom}
-                markerLabel={selectedLocation?.text}
+                markerLabel={selectedLocation?.name}
                 onMapClick={handleMapClick}
               />
             </div>

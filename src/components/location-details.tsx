@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { MapboxFeature, OpenWeatherMapResponse } from '@/lib/types';
-import { WeatherIcon } from './weather-icon';
+import type { Location, OpenWeatherMapResponse } from '@/lib/types'; // Updated import to use Location from types
+import { WeatherIcon } from "./weather-icon";
 import { Thermometer, Droplets, Wind, Globe, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LocationDetailsProps {
-  location: MapboxFeature | null;
+  location: Location | null; // Updated to use Location type
 }
 
 export function LocationDetails({ location }: LocationDetailsProps) {
@@ -20,9 +20,9 @@ export function LocationDetails({ location }: LocationDetailsProps) {
   const { toast } = useToast();
 
   const openWeatherMapApiKey = "90200d8b2ddd4bcac90b6c9b00ebb0f8"; // This should be in an environment variable
-
+ 
   useEffect(() => {
-    if (location && location.center) {
+    if (location && location.longitude && location.latitude) { // Check for longitude and latitude
       const fetchWeather = async () => {
         if (!openWeatherMapApiKey) {
           setError("OpenWeatherMap API key not configured.");
@@ -32,9 +32,9 @@ export function LocationDetails({ location }: LocationDetailsProps) {
         setIsLoading(true);
         setError(null);
         try {
-          const [lon, lat] = location.center;
+          const { latitude, longitude } = location;
           const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherMapApiKey}&units=metric`
+            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${openWeatherMapApiKey}&units=metric`
           );
           if (!response.ok) {
             const errorData = await response.json();
@@ -60,9 +60,9 @@ export function LocationDetails({ location }: LocationDetailsProps) {
     } else {
       setWeather(null);
       setError(null);
-      setIsLoading(false); // Ensure loading is false if no location
+      setIsLoading(false); // Ensure loading is false if no location or no coordinates
     }
-  }, [location, toast]); // Removed openWeatherMapApiKey from dependency array as it's a constant string here. Ideally, it comes from env.
+  }, [location, toast]);
 
   if (!location) {
     return (
@@ -83,12 +83,12 @@ export function LocationDetails({ location }: LocationDetailsProps) {
     );
   }
 
-  const country = location.context?.find(ctx => ctx.id.startsWith('country'))?.text || 'N/A';
+  const country = location.country || 'N/A';
 
   return (
     <Card className="h-full shadow-lg overflow-y-auto">
       <CardHeader>
-        <CardTitle className="text-2xl">{location.text || location.place_name.split(',')[0]}</CardTitle>
+        <CardTitle className="text-2xl">{location.name || 'Unknown Location'}</CardTitle>
         <CardDescription className="flex items-center">
             <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
             {country}
@@ -137,7 +137,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
             </div>
           </div>
         )}
-        {!isLoading && !weather && !error && !location.center && ( // Handles case where location has no center
+        {!isLoading && !weather && !error && (!location.latitude || !location.longitude) && (
             <Alert variant="default">
                 <Info className="h-5 w-5" />
                 <AlertTitle>Location Incomplete</AlertTitle>
