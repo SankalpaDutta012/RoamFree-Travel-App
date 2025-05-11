@@ -83,11 +83,19 @@ export function LocationSearch({ onLocationSelect, initialSearchTerm = "" }: Loc
   
   const debouncedFetchLocations = useCallback(debounce(fetchLocations, 300), [fetchLocations]);
 
+  // Effect to synchronize searchTerm with initialSearchTerm prop
   useEffect(() => {
-    if (initialSearchTerm && !results.length) { // Only fetch if no results yet for initial term
-       // debouncedFetchLocations(initialSearchTerm); // Keep this commented if page.tsx handles initial
+    setSearchTerm(initialSearchTerm);
+    // If initialSearchTerm is cleared (e.g., by parent component), also clear results.
+    if (!initialSearchTerm) {
+      setResults([]);
+      setShowResults(false);
+      setIsLoading(false); // Reset loading state as well
     }
-  }, [initialSearchTerm, debouncedFetchLocations, results.length]);
+    // This effect does not automatically trigger a search for initialSearchTerm.
+    // HomePage handles setting the initial selected location.
+    // User-initiated searches are handled by handleInputChange.
+  }, [initialSearchTerm]);
 
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -122,6 +130,7 @@ export function LocationSearch({ onLocationSelect, initialSearchTerm = "" }: Loc
     <div 
       className="relative w-full"
       onBlur={(e) => {
+        // Hide results if focus moves outside the search component
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
           setShowResults(false);
         }
