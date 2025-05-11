@@ -26,7 +26,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
       const fetchWeather = async () => {
         if (!openWeatherMapApiKey) {
           setError("OpenWeatherMap API key not configured.");
-          console.error("OpenWeatherMap API key not configured.");
+          // console.error removed as the error is handled by setError and toast
           return;
         }
         setIsLoading(true);
@@ -60,6 +60,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
     } else {
       setWeather(null);
       setError(null);
+      setIsLoading(false); // Ensure loading is false if no location
     }
   }, [location, openWeatherMapApiKey, toast]);
 
@@ -135,6 +136,15 @@ export function LocationDetails({ location }: LocationDetailsProps) {
               </div>
             </div>
           </div>
+        )}
+        {!isLoading && !weather && !error && !location.center && ( // Handles case where location has no center
+            <Alert variant="default">
+                <Info className="h-5 w-5" />
+                <AlertTitle>Location Incomplete</AlertTitle>
+                <AlertDescription>
+                    The selected location does not have coordinates to fetch weather for.
+                </AlertDescription>
+            </Alert>
         )}
       </CardContent>
     </Card>
