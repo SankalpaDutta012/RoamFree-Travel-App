@@ -20,7 +20,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const openWeatherMapApiKey = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY;
+  const openWeatherMapApiKey = "90200d8b2ddd4bcac90b6c9b00ebb0f8";
  
   useEffect(() => {
     if (location && location.longitude && location.latitude) { 
