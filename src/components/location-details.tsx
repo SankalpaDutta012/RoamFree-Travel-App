@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -6,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Location, OpenWeatherMapResponse } from '@/lib/types'; // Updated import to use Location from types
 import { WeatherIcon } from "./weather-icon";
+import { PhotoGallery } from './photo-gallery';
 import { Thermometer, Droplets, Wind, Globe, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,22 +17,22 @@ interface LocationDetailsProps {
 
 export function LocationDetails({ location }: LocationDetailsProps) {
   const [weather, setWeather] = useState<OpenWeatherMapResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const openWeatherMapApiKey = "90200d8b2ddd4bcac90b6c9b00ebb0f8"; // This should be in an environment variable
+  const openWeatherMapApiKey = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY;
  
   useEffect(() => {
-    if (location && location.longitude && location.latitude) { // Check for longitude and latitude
+    if (location && location.longitude && location.latitude) { 
       const fetchWeather = async () => {
         if (!openWeatherMapApiKey) {
-          setError("OpenWeatherMap API key not configured.");
-          // console.error removed as the error is handled by setError and toast
+          setWeatherError("OpenWeatherMap API key not configured.");
+          // console.error removed as the error is handled by setWeatherError and toast
           return;
         }
-        setIsLoading(true);
-        setError(null);
+        setIsLoadingWeather(true);
+        setWeatherError(null);
         try {
           const { latitude, longitude } = location;
           const response = await fetch(
@@ -45,7 +47,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
           console.error('Error fetching weather:', errorMessage);
-          setError(errorMessage);
+          setWeatherError(errorMessage);
           toast({
             title: 'Weather Error',
             description: `Could not fetch weather: ${errorMessage}`,
@@ -53,16 +55,16 @@ export function LocationDetails({ location }: LocationDetailsProps) {
           });
           setWeather(null);
         } finally {
-          setIsLoading(false);
+          setIsLoadingWeather(false);
         }
       };
       fetchWeather();
     } else {
       setWeather(null);
-      setError(null);
-      setIsLoading(false); // Ensure loading is false if no location or no coordinates
+      setWeatherError(null);
+      setIsLoadingWeather(false); 
     }
-  }, [location, toast]);
+  }, [location, toast, openWeatherMapApiKey]);
 
   if (!location) {
     return (
@@ -91,12 +93,12 @@ export function LocationDetails({ location }: LocationDetailsProps) {
         <CardTitle className="text-2xl">{location.name || 'Unknown Location'}</CardTitle>
         <CardDescription className="flex items-center">
             <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
-            {country}
+            {location.fullName ? location.fullName.split(', ').slice(1).join(', ') : country}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <h3 className="text-lg font-semibold mb-3 text-primary">Current Weather</h3>
-        {isLoading && (
+        {isLoadingWeather && (
           <div className="space-y-4">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-6 w-1/2" />
@@ -104,14 +106,14 @@ export function LocationDetails({ location }: LocationDetailsProps) {
             <Skeleton className="h-6 w-1/2" />
           </div>
         )}
-        {error && !isLoading && (
+        {weatherError && !isLoadingWeather && (
            <Alert variant="destructive">
              <Info className="h-5 w-5" />
              <AlertTitle>Weather Data Unavailable</AlertTitle>
-             <AlertDescription>{error}</AlertDescription>
+             <AlertDescription>{weatherError}</AlertDescription>
            </Alert>
         )}
-        {weather && !isLoading && !error && (
+        {weather && !isLoadingWeather && !weatherError && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -137,7 +139,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
             </div>
           </div>
         )}
-        {!isLoading && !weather && !error && (!location.latitude || !location.longitude) && (
+        {!isLoadingWeather && !weather && !weatherError && (!location.latitude || !location.longitude) && (
             <Alert variant="default">
                 <Info className="h-5 w-5" />
                 <AlertTitle>Location Incomplete</AlertTitle>
@@ -146,6 +148,9 @@ export function LocationDetails({ location }: LocationDetailsProps) {
                 </AlertDescription>
             </Alert>
         )}
+        
+        <PhotoGallery locationName={location.name} />
+
       </CardContent>
     </Card>
   );
