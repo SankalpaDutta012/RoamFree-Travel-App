@@ -14,9 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'RoamFree - Travel Explorer',
-  description: 'Explore and discover new destinations with RoamFree.',
+  title: 'RoamFree – Discover the World',
+  description: 'Plan, explore, and dream. Your personal travel bucket list starts here with RoamFree.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+  openGraph: {
+    title: 'RoamFree – Discover the World',
+    description: 'Plan, explore, and dream. Your personal travel bucket list starts here with RoamFree.',
+    url: 'https://roamfree-travel-app.onrender.com', // change to your real domain
+    siteName: 'RoamFree',
+    images: [
+      {
+        url: '/og-image.png', // path inside /public
+        width: 1200,
+        height: 630,
+        alt: 'RoamFree App Preview',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
 };
+
 
 export default function RootLayout({
   children,
