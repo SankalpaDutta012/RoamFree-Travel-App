@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
+        hostname: 'openweathermap.org',
+      },
+      {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',

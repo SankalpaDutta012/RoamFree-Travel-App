@@ -19,7 +19,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const openWeatherMapApiKey = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY;
+  const openWeatherMapApiKey = "90200d8b2ddd4bcac90b6c9b00ebb0f8"; // This should be in an environment variable
 
   useEffect(() => {
     if (location && location.center) {
@@ -62,7 +62,7 @@ export function LocationDetails({ location }: LocationDetailsProps) {
       setError(null);
       setIsLoading(false); // Ensure loading is false if no location
     }
-  }, [location, openWeatherMapApiKey, toast]);
+  }, [location, toast]); // Removed openWeatherMapApiKey from dependency array as it's a constant string here. Ideally, it comes from env.
 
   if (!location) {
     return (
